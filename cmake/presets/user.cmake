@@ -121,6 +121,8 @@ set(LAMMPS_MACHINE mpi CACHE STRING "" FORCE)
 # turn on GPU support
 set(PKG_GPU ON CACHE BOOL "" FORCE)
 set(GPU_API cuda CACHE STRING "" FORCE)
-set(GPU_ARCH sm_75 CACHE STRING "" FORCE)
-# set(GPU_PREC=mixed CACHE STRING "" FORCE)
+set(GPU_ARCH sm_61 CACHE STRING "" FORCE)
 
+# set cuda lib path, if it is not in the default location
+# or use -DCMAKE_LIBRARY_PATH=$CUDA_HOME/lib64/stubs as cmake argument
+set(CUDA_CUDA_LIBRARY /usr/local/apps/cuda/9.1/lib64/stubs/libcuda.so CACHE STRING "" FORCE)
