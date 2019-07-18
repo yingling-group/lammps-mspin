@@ -564,7 +564,9 @@ FixRigid::FixRigid(LAMMPS *lmp, int narg, char **arg) :
       else error->all(FLERR,"Illegal fix rigid command");
       iarg += 2;
 
-    } else error->all(FLERR,"Illegal fix rigid command");
+    }
+    // else error->all(FLERR,"Illegal fix rigid command");
+    iarg++;   // allow additional arguments
   }
 
   // set pstat_flag
