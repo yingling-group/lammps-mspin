@@ -84,8 +84,8 @@ set(PKG_MSCG OFF CACHE BOOL "" FORCE)
 set(PKG_USER-PLUMED OFF CACHE BOOL "" FORCE)
 
 # needs netcdf library
-set(NETCDF_INCLUDE_DIRS /home/akhlak/programs/miniconda3/pkgs/libnetcdf-4.6.1-h13459d8_0/include CACHE STRING "" FORCE)
-set(NETCDF_LIBRARY ../../miniconda3/pkgs/libnetcdf-4.6.1-h13459d8_0/lib/libnetcdf.so.13 CACHE STRING "" FORCE)
+# set(NETCDF_INCLUDE_DIRS /home/akhlak/programs/miniconda3/pkgs/libnetcdf-4.6.1-h13459d8_0/include CACHE STRING "" FORCE)
+# set(NETCDF_LIBRARY ../../miniconda3/pkgs/libnetcdf-4.6.1-h13459d8_0/lib/libnetcdf.so.13 CACHE STRING "" FORCE)
 set(PKG_USER-NETCDF OFF CACHE BOOL "" FORCE)
 
 # needs Eigen3
@@ -121,7 +121,8 @@ set(LAMMPS_MACHINE mpi CACHE STRING "" FORCE)
 # turn on GPU support
 set(PKG_GPU ON CACHE BOOL "" FORCE)
 set(GPU_API cuda CACHE STRING "" FORCE)
-set(GPU_ARCH sm_61 CACHE STRING "" FORCE)
+# set(GPU_ARCH sm_61 CACHE STRING "" FORCE)
+set(GPU_ARCH sm_35 CACHE STRING "" FORCE)
 
 # set cuda lib path, if it is not in the default location
 # or use -DCMAKE_LIBRARY_PATH=$CUDA_HOME/lib64/stubs as cmake argument
