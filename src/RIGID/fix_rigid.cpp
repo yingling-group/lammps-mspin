@@ -563,7 +563,6 @@ FixRigid::FixRigid(LAMMPS *lmp, int narg, char **arg) :
       else if  (strcmp("no",arg[iarg+1]) == 0) reinitflag = 0;
       else error->all(FLERR,"Illegal fix rigid command");
       iarg += 2;
-
     }
     // else error->all(FLERR,"Illegal fix rigid command");
     iarg++;   // allow additional arguments
