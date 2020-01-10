@@ -352,8 +352,8 @@ void FixMspinNH::compute_dipolar()
 
   dipolar_pe = 0.0;
 
-  // scaling and prefactor
-  fq = alpha * beta * mu_0 / MathConst::MY_4PI;
+  // scaling and prefactors
+  fq = alpha * beta * beta * mu_0 / MathConst::MY_4PI;
 
   // since no of rigid bodies, nbody is usually small
   // we calculate manybody interaction seperately in each proc
