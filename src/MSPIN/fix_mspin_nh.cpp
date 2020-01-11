@@ -246,9 +246,9 @@ void FixMspinNH::calculate_dipoles(int initialize = 0)
       error->all(FLERR, "Fix mspin/rigid requires exactly 2 non-zero qm atoms per molecule.");
 
     // qmag charge in kilo-e/fs units, multiply by 1000
-    mu[i][0] = 1000 * qm[i] * dq[i][0];
-    mu[i][1] = 1000 * qm[i] * dq[i][1];
-    mu[i][2] = 1000 * qm[i] * dq[i][2];
+    mu[i][0] = 1000 * beta * qm[i] * dq[i][0];
+    mu[i][1] = 1000 * beta * qm[i] * dq[i][1];
+    mu[i][2] = 1000 * beta * qm[i] * dq[i][2];
 
     // printf("Proc [%d]: qm[%d] %f\n", me, i, qm[i]);
 
@@ -313,9 +313,9 @@ void FixMspinNH::compute_zeeman()
     ty = bxdx * mu[ibody][2] - bzdz * mu[ibody][0];
     tz = bydy * mu[ibody][0] - bxdx * mu[ibody][1];
 
-    torque[ibody][0] += tx * beta;
-    torque[ibody][1] += ty * beta;
-    torque[ibody][2] += tz * beta;    
+    torque[ibody][0] += tx;
+    torque[ibody][1] += ty;
+    torque[ibody][2] += tz;    
 
     // printf("Proc [%d]: dT[%d] %f, %f, %f \n", me,
     //             ibody, tx, ty, tz);
@@ -328,15 +328,15 @@ void FixMspinNH::compute_zeeman()
       fy = mu[ibody][0] * bydx + mu[ibody][1] * bydy + mu[ibody][2] * bydz;
       fz = mu[ibody][0] * bzdx + mu[ibody][1] * bzdy + mu[ibody][2] * bzdz;
 
-      fcm[ibody][0] += fx * beta;
-      fcm[ibody][1] += fy * beta;
-      fcm[ibody][2] += fz * beta;
+      fcm[ibody][0] += fx;
+      fcm[ibody][1] += fy;
+      fcm[ibody][2] += fz;
 
       // printf("Proc [%d]: dF[%d] %f, %f, %f \n", me,
       //             ibody, fx, fy, fz);
     }
 
-    zeeman_pe -= beta * ( mu[ibody][0] * bxdx + mu[ibody][1] * bydy + mu[ibody][2] * bzdz );
+    zeeman_pe -= ( mu[ibody][0] * bxdx + mu[ibody][1] * bydy + mu[ibody][2] * bzdz );
   }
 }
 
@@ -353,7 +353,7 @@ void FixMspinNH::compute_dipolar()
   dipolar_pe = 0.0;
 
   // scaling and prefactors
-  fq = alpha * beta * beta * mu_0 / MathConst::MY_4PI;
+  fq = alpha * mu_0 / MathConst::MY_4PI;
 
   // since no of rigid bodies, nbody is usually small
   // we calculate manybody interaction seperately in each proc
