@@ -30,7 +30,7 @@ pair_modify     mix arithmetic
 kspace_style    pppm 1e-4
 
 # load the lammps data file 
-read_data			Bare-Fe3O4-MNP-in-HXN.dat
+read_data			Bare-Fe3O4-MNP-in-HXN.data
 
 # Do AMBER like calculation
 special_bonds   amber
@@ -38,7 +38,7 @@ special_bonds   amber
 reset_timestep		0
 timestep 			1.0
 
-thermo 				100
+thermo 				50
 
 # minimize for a bit to get a near 0K structure
 print				""
@@ -61,59 +61,21 @@ timestep 			1.0
 
 fix		1			all nvt temp 1 300 100 
 dump			1	all custom 50 heat.lammpstrj id mol type x y z ix iy iz
-run		9000
+run		900
 undump			1
 unfix 	1
 
 print				""
-print				"	... NVT EQUILIBRATION 1 ..."
+print				"	... NVT EQUILIBRATION ..."
 print				"================================"
 reset_timestep		0
 timestep 			1.0
 
 fix		1			all nvt temp 300 300 100
 dump			1	all custom 50 eq1.lammpstrj id mol type x y z ix iy iz
-restart 10000		cpu.restart.eq1
-run		20000
+restart 1000		restart.eq1
+run		1000
 undump			1
 unfix	1
 
-# NPT long equilibration 2
-print				""
-print				"	... NPT EQUILIBRATION 2 ..."
-print				"================================"
-reset_timestep		0
-timestep 			1.0
-
-# fix		1		all npt temp 300 300 100 iso 1.0 1.0 500
-fix 	com 		all recenter INIT INIT INIT
-dump			1	all custom 500 eq2.lammpstrj id mol type x y z ix iy iz
-restart 10000		cpu.restart.eq2
-run 	20000
-undump			1
-unfix	1
 unfix 	restraint
-
-## Note: the thermo output values after eq2 should be close to the corresponding amber eq values.
-
-## Production Simulation - Magnetic Interaction
-##################################################################################################
-# Useful for visualization in VMD
-dump			1	   		all custom 1000 ./md.lammpstrj id mol type x y z ix iy iz
-
-group 			ligs		subtract all feo
-
-# Do not compute bonded interactions inside the rigid bodies, recompute the special nonbonded weights
-delete_bonds    feo 		multi remove special
-
-fix				fligs		ligs nvt temp 300 300 100
-fix				mspin      	feo rigid/mspin molecule temp 300.0 300.0 10.0 bfield 0.0 0.0 1.0 uniform alpha 1.0 beta 5.0
-fix_modify 		mspin		energy yes
-
-compute			engy		feo mspin mspin
-thermo_style 	custom 		step ecoul evdwl pe ke etotal temp c_engy[1] c_engy[2]
-
-fix 			com 		all recenter INIT INIT INIT
-
-restart         md.restart
-run				500000

@@ -1,5 +1,5 @@
 # LAMMPS-MSPIN
-A LAMMPS plugin `MSPIN` for atomistic molecular dynamics simulations of magnetic nanoparticles.
+A LAMMPS plugin `MSPIN` for atomistic molecular dynamics simulations of magnetic nanoparticles (MNPs).
 
 Developed for simulation method published in:
 >A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
@@ -43,7 +43,10 @@ please see the instructions on the [main branch](https://github.com/yingling-gro
     make -j4
     ```
 
+A LAMMPS excutable `lmp_mpi` will be created.
+
 # USAGE
+Example data and input files of a Fe3O4 MNP solvated in hexane can be found in the `examples/mspin` directory.
 
 General steps to follow:
 1. Identify two atoms in the MNP core to set as 'MS' atoms.
@@ -56,7 +59,6 @@ Make sure that one of the "MS" atoms has a positive Qm value, and the other has 
 ## Data File for MNP
 A new atom style `qmag` has been introduced in the plugin which is the LAMMPS `full` atom style
 with an additional column/field for "magnetic charge" Qm values.
-An example of a data file can be found in the `examples/mspin` directory.
 
 ### "Magnetic Charge" Calculation
 As an example, we will consider the magnetic moment of a Fe3O4 unit cell, which is `32 muB`,
@@ -82,7 +84,7 @@ To use this magnetization value, we need to convert it into LAMMPS real units.
 
 Where, `1fs = 1E-15 seconds`, `e` is the electronic charge, `1 Coulomb = 6.2415E+18 e`.
 
-> Note: e/fs is Ampere in LAMMPS real units.
+**Note**: e/fs is Ampere in LAMMPS real units.
 
 Using this, in real units,
 
@@ -167,7 +169,7 @@ of the rigid bodies.
     compute 	    re	feo erotate/rigid <fix_id>
     thermo_style 	custom step ecoul evdwl pe ke etotal temp c_te c_re
 
-> Note: These `compute` and `thermo_style` should be defined only once
+**Note**: These `compute` and `thermo_style` should be defined only once
 for all subsequent runs. LAMMPS doesn't permit defining compute with the
 same ID more than once.
 
@@ -182,7 +184,7 @@ We can specify the value of `alpha` as a keyword while defining the MSPIN fix, (
 
     fix <fix_id> feo rigid/mspin molecule temp 300 300 10 bfield 0.5 0.0 0.0 uniform dpcut 64 alpha 5.0
 
-> Note: In the current implementation, `alpha` is used to scale the `mu_0/4pi` term which does not exist in the Zeeman equations.
+**Note**: In the current implementation, `alpha` is used to scale the `mu_0/4pi` term which does not exist in the Zeeman equations.
 
 ## Dipole Moment Scaling Factor `beta`
 The scaling factor `beta` is used to scale up the dipole moment directly
