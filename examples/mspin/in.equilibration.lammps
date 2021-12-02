@@ -30,7 +30,7 @@ pair_modify     mix arithmetic
 kspace_style    pppm 1e-4
 
 # load the lammps data file 
-read_data			Bare-Fe3O4-MNP-in-HXN.dat
+read_data			Bare-Fe3O4-MNP-in-HXN.data
 
 # Do AMBER like calculation
 special_bonds   amber
