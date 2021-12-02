@@ -61,53 +61,32 @@ A new atom style `qmag` has been introduced in the plugin which is the LAMMPS `f
 with an additional column/field for "magnetic charge" Qm values.
 
 ### "Magnetic Charge" Calculation
-As an example, we will consider the magnetic moment of a Fe3O4 unit cell, which is `32 muB`,
-where `muB` is the Bohr Magneton with a value,
+As an example, the bulk saturation magnetization of Fe3O4 is 480 KAmpere/Meter
+(K. Butter et. al. Nature Materials 2, 88–91 (2003)).
 
-				muB 	= 9.274E-24 Joules/Tesla
-    					= 9.274E-24 Ampere Meter^2
-	    				= 5.7884 e / fs Angstrom^2
+In LAMMPS "real" unit,
 
-Also, the lattice constant of Fe3O4 is `8.39 Angstrom` and
-magnetization is defined as the dipole moment per unit volume.
-So, we can find the volume of a Fe3O4 unit cell `= (8.39 Angstrom)^3 = 5.905E-28 Meter^3`.
-    
-Then the magnetization,
+				M	= 480E+3 Ampere/Meter
+				    = 480 * 6241.5 / 1E+10 Ke /fs / Angstrom
+                    = 0.000300 Ke/fs/Angstrom
 
-				M	= 32 * muB /  5.905E-28 Meter^3
-					= 502.57E+3 Ampere/Meter
-
-To use this magnetization value, we need to convert it into LAMMPS real units.
-
-			1 Ampere 	= 1 Coulomb / Second
-    					= 6241.5 e / fs
-
-Where, `1fs = 1E-15 seconds`, `e` is the electronic charge, `1 Coulomb = 6.2415E+18 e`.
-
-**Note**: e/fs is Ampere in LAMMPS real units.
-
-Using this, in real units,
-
-				M	= 0.3137 e/fs / Angstrom
-
-Therefore, a 7nm nanoparticle will have dipole moment
+For a 7 nm nanoparticle, the magnetic dipole moment
 
 				m	= M * Volume of the particle
-					= 0.3137 * 4/3 * PI * 35^3 e/fs Angstrom^2
-					= 56.339E+3 e/fs Angstrom^2
-					= 56.339 Ke/fs Angstrom^2
+					= 0.000300 Ke/fs/Angstrom * 4/3 * PI * 35^3 Ke/fs Angstrom^3
+					= 53.878 Ke/fs Angstrom^2
 
-If we choose two MS atoms at far edges of a nanoparticle,
-then we can assume the distance between them is same as the diameter of the nanoparticle,
+If we choose two MS atoms at far edges of a nanoparticle, then we can assume the distance
+between them is same as the diameter of the nanoparticle,
 
 				d 	= 70 Angstrom
 
 Then for each of these atoms,
 
-				Qm 	= 56.339 / 70 Ke/fs Angstrom
-					= 0.8048 Ke/fs Angstrom
+				Qm 	= 53.878 / 70 Ke/fs Angstrom
+					= 0.7697 Ke/fs Angstrom
 
-Then we need to set +0.8048 and -0.8048 as +/-Qm respectively for the MS atoms of the configuration.
+Then we need to set +0.7697 and -0.7697 as +/-Qm respectively for the MS atoms of the MNP.
 
 
 ## Available LAMMPS Commands
