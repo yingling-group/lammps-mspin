@@ -67,8 +67,8 @@ As an example, the bulk saturation magnetization of Fe3O4 is 480 KAmpere/Meter
 In LAMMPS "real" unit,
 
 				M	= 480E+3 Ampere/Meter
-				    = 480 * 6241.5 / 1E+10 Ke /fs / Angstrom
-                    = 0.000300 Ke/fs/Angstrom
+				    	= 480 * 6241.5 / 1E+10 Ke /fs / Angstrom
+                    			= 0.000300 Ke/fs/Angstrom
 
 For a 7 nm nanoparticle, the magnetic dipole moment
 
