@@ -3,7 +3,7 @@ A complete LAMMPS source branch containing `MSPIN` plugin for atomistic
 simulations of magnetic nanoparticles.
 
 **Note**: If you are interested only in the source code relevant to the `MSPIN`
-plugin, please see the [plugin branch](/tree/plugin "plugin branch").
+plugin, please see the [plugin branch](/yingling-group/lammps-mspin/tree/plugin "plugin branch").
 
 Developed for simulation method published in:
 >A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
