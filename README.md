@@ -1,7 +1,7 @@
 # LAMMPS-MSPIN
 A LAMMPS plugin `MSPIN` for atomistic molecular dynamics simulations of magnetic nanoparticles (MNPs).
 
-Developed for simulation method published in:
+Developed for simulation method described in:
 >A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
 and Dipolar Assembly of Magnetic Nanoparticles.* (2021)
 
