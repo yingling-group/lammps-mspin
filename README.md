@@ -1,26 +1,21 @@
 # LAMMPS-MSPIN
-A LAMMPS plugin `MSPIN` for atomistic molecular dynamics simulations of magnetic nanoparticles (MNPs).
+LAMMPS plugin `MSPIN` for atomistic molecular dynamics simulations of magnetic nanoparticles (MNPs).
 
 Developed for simulation method described in:
->A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
+> A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
 and Dipolar Assembly of Magnetic Nanoparticles.* (2021)
 
-Please cite paper above if used.
+Please cite the paper above if used.
 
 Author:   
 Akhlak Mahmood   
-Yingling Group  
-North Carolina State University
+Yingling Group, MSE   
+NC State University, USA
 
-## Branches
-- If you are interested in installing the `MSPIN` plugin to your local machine,
-please see the instructions on the [main branch](https://github.com/yingling-group/lammps-mspin "main branch").
-
-- If you are interested in the source code of the plugin, please see the 
+**Note:** If you are interested in the latest source code of the plugin, please see the 
 [plugin branch](https://github.com/yingling-group/lammps-mspin/tree/plugin "plugin branch").
 
-
-# INSTALLATION
+## Installation
 
 1. Clone the main branch to your local machine.
     ```
@@ -43,10 +38,10 @@ please see the instructions on the [main branch](https://github.com/yingling-gro
     make -j4
     ```
 
-A LAMMPS excutable `lmp_mpi` will be created.
+A LAMMPS excutable `lmp_mpi` will be generated in the `build` directory.
 
-# USAGE
-Example data and input files of a Fe3O4 MNP solvated in hexane can be found in the `examples/mspin` directory.
+## Usage
+Example data and input files of a bare Fe3O4 MNP solvated in hexane can be found in the `examples/mspin` directory.
 
 General steps to follow:
 1. Identify two atoms in the MNP core to set as 'MS' atoms.
@@ -56,7 +51,7 @@ Make sure that one of the "MS" atoms has a positive Qm value, and the other has 
 2. Create a LAMMPS input file and define magnetic interactions using the commands described below.
 3. Run the simulation.
 
-## Data File for MNP
+### Data File for MNP
 A new atom style `qmag` has been introduced in the plugin which is the LAMMPS `full` atom style
 with an additional column/field for "magnetic charge" Qm values.
 
@@ -89,7 +84,7 @@ Then for each of these atoms,
 Then we need to set +0.7697 and -0.7697 as +/-Qm respectively for the MS atoms of the MNP.
 
 
-## Available LAMMPS Commands
+### Available LAMMPS Commands
 To define a group for the rigid magnetic molecules. The following command defines the 
 group `feo` for eight MNPs with IDs 1 to 8.
 
@@ -116,7 +111,7 @@ To set a uniform magnetic field, use the `uniform` keyword.
     fix <fix_id> feo rigid/mspin molecule temp 300 300 10 bfield 5.0 0.0 0.0 uniform dpcut 64
 
 
-## Thermo Outputs
+### Thermo Outputs
 Turn on the energy contributions using the `fix_modify` command.
 
     fix_modify <fix_id> energy yes
@@ -152,20 +147,22 @@ of the rigid bodies.
 for all subsequent runs. LAMMPS doesn't permit defining compute with the
 same ID more than once.
 
-## Dipolar Interaction Scaling Factor `alpha`
-Due to particles distribution and geometry, a second ‘demagnetizing factor’ comes up.
-Allia et. al. Physical Review B 2001, 64 (14), 144420 mentions this term could be as much as a hundred. 
+### Dipolar Interaction Scaling Factor `alpha`
+Due to particles distribution and geometry, a second ‘demagnetizing factor’ may come into play.
+Allia *et al.* Physical Review B 2001, 64 (14), 144420 reports this term to be
+as much as a hundred.
 Note that this factor doesn’t affect the zeeman interaction.
 When the particles are in liquid and free to move, this becomes a ‘magnetizing effect’.
-See Sanchez and Raap et. al. Physical Review B 2017, 95(134421) for more info.
+See Sanchez *et al.* Physical Review B 2017, 95(134421) for details.
 
 We can specify the value of `alpha` as a keyword while defining the MSPIN fix, (default is 1.0).
 
     fix <fix_id> feo rigid/mspin molecule temp 300 300 10 bfield 0.5 0.0 0.0 uniform dpcut 64 alpha 5.0
 
-**Note**: In the current implementation, `alpha` is used to scale the `mu_0/4pi` term which does not exist in the Zeeman equations.
+**Note**: In the current implementation, `alpha` is used to scale the `mu_0/4pi` term
+which does not exist in the Zeeman equations.
 
-## Dipole Moment Scaling Factor `beta`
+### Dipole Moment Scaling Factor `beta`
 The scaling factor `beta` is used to scale up the dipole moment directly
 so it scales both Zeeman and dipolar interactions.
 Since both the dipolar interaction energy and the dipole moment has
@@ -177,9 +174,10 @@ fix <fix_id> feo rigid/mspin molecule temp 300 300 10 bfield 0.5 0.0 0.0 uniform
 
 **Note**: `alpha` affects the dipolar interactions only, `beta` affects both Zeeman and dipolar interactions.
 
-## Currently Known Limitations
+## Known Limitations
 - Constant pressure (NPT) simulation has not been tested.
 - Only MPI parallelization is supported for the magnetic interactions.
-K-space and pairwise interactions can be calculated using GPUs.
-- Only real units are supported and/or tested.
+K-space and pairwise interaction calculations can still be accelerated using GPU code.
+- Only the 'real' units of LAMMPS are supported and/or tested.
 - Timestep needs to be `1.0 fs`
+
