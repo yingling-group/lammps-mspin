@@ -12,7 +12,7 @@ Akhlak Mahmood
 Yingling Group, MSE   
 NC State University, USA
 
-**Note:** If you are interested in installing and using the `MSPIN` plugin to your local machine,
+**Note:** If you are interested in using and installing the `MSPIN` plugin on your local machine,
 please see the instructions on the [main branch](https://github.com/yingling-group/lammps-mspin "main branch").
 
 ## Usage
