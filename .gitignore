@@ -49,3 +49,8 @@ Thumbs.db
 /Testing
 /cmake_install.cmake
 /lmp
+examples/mspin/eq1.lammpstrj
+
+#mspin
+*.lammpstrj
+restart.*
