@@ -1,6 +1,7 @@
+// clang-format off
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
+   https://www.lammps.org/, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
@@ -16,18 +17,19 @@
 ------------------------------------------------------------------------- */
 
 #include "compute_dilatation_atom.h"
-#include <cstring>
+
 #include "atom.h"
-#include "update.h"
-#include "modify.h"
 #include "comm.h"
-#include "fix.h"
+#include "error.h"
 #include "force.h"
+#include "memory.h"
+#include "modify.h"
+#include "pair_peri_eps.h"
 #include "pair_peri_lps.h"
 #include "pair_peri_ves.h"
-#include "pair_peri_eps.h"
-#include "memory.h"
-#include "error.h"
+#include "update.h"
+
+#include <cstring>
 
 using namespace LAMMPS_NS;
 
@@ -43,7 +45,7 @@ ComputeDilatationAtom(LAMMPS *lmp, int narg, char **arg) :
   size_peratom_cols = 0;
 
   nmax = 0;
-  dilatation = NULL;
+  dilatation = nullptr;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -66,10 +68,10 @@ void ComputeDilatationAtom::init()
   // check PD pair style
 
   isPMB = isLPS = isVES = isEPS = 0;
-  if (force->pair_match("peri/pmb",1)) isPMB = 1;
-  if (force->pair_match("peri/lps",1)) isLPS = 1;
-  if (force->pair_match("peri/ves",1)) isVES = 1;
-  if (force->pair_match("peri/eps",1)) isEPS = 1;
+  if (force->pair_match("^peri/pmb",0)) isPMB = 1;
+  if (force->pair_match("^peri/lps",0)) isLPS = 1;
+  if (force->pair_match("^peri/ves",0)) isVES = 1;
+  if (force->pair_match("^peri/eps",0)) isEPS = 1;
 
   if (isPMB)
     error->all(FLERR,"Compute dilatation/atom cannot be used "
@@ -77,10 +79,7 @@ void ComputeDilatationAtom::init()
 
   // find associated PERI_NEIGH fix that must exist
 
-  int ifix_peri = -1;
-  for (int i = 0; i < modify->nfix; i++)
-    if (strcmp(modify->fix[i]->style,"PERI_NEIGH") == 0) ifix_peri = i;
-  if (ifix_peri == -1)
+  if (modify->find_fix_by_style("^PERI_NEIGH") == -1)
     error->all(FLERR,"Compute dilatation/atom requires Peridynamic pair style");
 }
 
@@ -120,6 +119,6 @@ void ComputeDilatationAtom::compute_peratom()
 
 double ComputeDilatationAtom::memory_usage()
 {
-  double bytes = nmax * sizeof(double);
+  double bytes = (double)nmax * sizeof(double);
   return bytes;
 }

@@ -26,7 +26,7 @@ specify -m and optionally -e, order does not matter
 Examples:
 
 make lib-poems args="-m serial" # build POEMS lib with same settings as in the serial Makefile in src
-make lib-colvars args="-m mpi"  # build USER-COLVARS lib with same settings as in the mpi Makefile in src
+make lib-colvars args="-m mpi"  # build COLVARS lib with same settings as in the mpi Makefile in src
 make lib-meam args="-m ifort"   # build MEAM lib with custom Makefile.ifort (using Intel Fortran)
 """
 
@@ -45,8 +45,11 @@ if not args.machine and not args.extramake:
   sys.exit(HELP)
 
 machine = args.machine
-extraflag = not args.extramake
-suffix = args.extramake
+extraflag = args.extramake
+if extraflag:
+    suffix = args.extramake
+else:
+    suffix = 'empty'
 
 # set lib from working dir
 

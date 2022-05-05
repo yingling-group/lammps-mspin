@@ -2,7 +2,7 @@
 
 // This file is part of the Collective Variables module (Colvars).
 // The original version of Colvars and its updates are located at:
-// https://github.com/colvars/colvars
+// https://github.com/Colvars/colvars
 // Please update all Colvars source files before making any changes.
 // If you wish to distribute your changes, please submit them to the
 // Colvars repository at GitHub.
@@ -124,7 +124,7 @@ public:
 
   /// Constructor from a type specification
   inline colvarvalue(Type const &vti)
-    : value_type(vti)
+    : value_type(vti), real_value(0.0)
   {
     reset();
   }
@@ -138,12 +138,12 @@ public:
   /// by default a type \link type_3vector \endlink , if you want a
   /// \link type_unit3vector \endlink you must set it explicitly)
   inline colvarvalue(cvm::rvector const &v, Type vti = type_3vector)
-    : value_type(vti), rvector_value(v)
+    : value_type(vti), real_value(0.0), rvector_value(v)
   {}
 
   /// \brief Copy constructor from quaternion base type
   inline colvarvalue(cvm::quaternion const &q, Type vti = type_quaternion)
-    : value_type(vti), quaternion_value(q)
+    : value_type(vti), real_value(0.0), quaternion_value(q)
   {}
 
   /// Copy constructor from vector1d base type
