@@ -35,6 +35,7 @@ set(LAMMPS_MACHINE mpi CACHE STRING "" FORCE)
 # Kepler: Tesla K40
 # set(GPU_ARCH sm_35 CACHE STRING "" FORCE)
 
-# Set cuda lib path, if it is not in the default location
+# (Module) Load the latest GCC, MPICH, CUDA to your terminal session.
+# Set cuda lib path, if it is not in the default location.
 # Or use -DCMAKE_LIBRARY_PATH=$CUDA_HOME/lib64/stubs as cmake argument
 # set(CUDA_CUDA_LIBRARY /usr/local/apps/cuda/9.1/lib64/stubs/libcuda.so CACHE STRING "" FORCE)
