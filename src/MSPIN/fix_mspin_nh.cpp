@@ -1,19 +1,40 @@
+/* ----------------------------------------------------------------------
+            Contributing author: Akhlak Mahmood (NC State)
+------------------------------------------------------------------------- */
+
+#include "fix_mspin_nh.h"
+
 #include <cstdio>
 #include <cmath>
 #include <cstring>
-#include "fix_mspin_nh.h"
 #include "error.h"
 #include "memory.h"
 #include "atom.h"
 #include "force.h"
 #include "math_const.h"
 #include "domain.h"
+#include "citeme.h"
 
 using namespace std;
 using namespace LAMMPS_NS;
 
-FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg, arg), mu(NULL), dq(NULL), qmcount(NULL)
+static const char cite_fix_mspin_c[] =
+  "rigid/mspin command: doi:10.1021/acs.jctc.1c01253\n\n"
+  "@Article{Mahmood22,\n"
+  " author = {A.U. Mahmood and Y.G. Yingling},\n"
+  " title = {All-Atom Simulation Method for Zeeman Alignment and Dipolar Assembly of Magnetic Nanoparticles},\n"
+  " journal = {Journal of Chemical Theory and Computation},\n"
+  " year =    2022,\n"
+  " volume =  XXXX,\n"
+  " pages =   {XXX-XXX}\n"
+  "}\n\n";
+
+/* ---------------------------------------------------------------------- */
+
+FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg, arg), mu(nullptr), dq(nullptr), qmcount(nullptr)
 {
+  if (lmp->citeme) lmp->citeme->add(cite_fix_mspin_c);
+
   if (rstyle != 1) // MOLECULE should be 1
     error->all(FLERR, "Fix mspin requires molecule style");
 
@@ -24,6 +45,12 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
   dipolar_flag = 0;
   uniform_field = 0;
 
+  // this fix contributes to the global energy
+  energy_global_flag = 1;
+
+  // disable langevin thermostating
+  langflag = 0;
+
   // demagnetizing/magnetizing factor
   // Sánchez and Raap et. al. Physical Review B 2017, 95 (13), 134421
   alpha = 1.0;
@@ -31,7 +58,8 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
   // a second scaling factor for the dipole moment itself
   beta = 1.0;
 
-  // do not normalize by natoms
+  // do not normalize the potential energy by natoms
+  // 0/1 if global scalar is intensive/extensive
   extscalar = 0;
 
   // we need a unit multiplier for Tesla
@@ -50,9 +78,9 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
 
       // Parse the jacobian components from the args
       // If it's an uniform field, we will treat these as xyz components
-      bxdx = qb2f * force->numeric(FLERR, arg[iarg + 1]);
-      bydy = qb2f * force->numeric(FLERR, arg[iarg + 2]);
-      bzdz = qb2f * force->numeric(FLERR, arg[iarg + 3]);
+      bxdx = qb2f * utils::numeric(FLERR, arg[iarg + 1], false, lmp);
+      bydy = qb2f * utils::numeric(FLERR, arg[iarg + 2], false, lmp);
+      bzdz = qb2f * utils::numeric(FLERR, arg[iarg + 3], false, lmp);
       iarg += 3;
 
       zeeman_flag = 1;
@@ -71,7 +99,7 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
       if (iarg + 2 > narg)
         error->all(FLERR, "Illegal fix mspin dpcut keyword");
       dipolar_flag = 1;
-      dipole_cutoff = force->numeric(FLERR, arg[iarg + 1]);
+      dipole_cutoff = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg++;
     }
 
@@ -80,7 +108,7 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
     {
       if (iarg + 2 > narg)
         error->all(FLERR, "Illegal fix mspin alpha keyword");
-      alpha = force->numeric(FLERR, arg[iarg + 1]);
+      alpha = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg++;
     }
 
@@ -89,7 +117,7 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
     {
       if (iarg + 2 > narg)
         error->all(FLERR, "Illegal fix mspin beta keyword");
-      beta = force->numeric(FLERR, arg[iarg + 1]);
+      beta = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg++;
     }
 
@@ -137,11 +165,11 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
 
     if (zeeman_flag == 1) {
       if (uniform_field == 0) {
-        if (screen) fprintf(screen, "\tnon-uniform external B field %lf %lf %lf applied\n", bxdx, bydy, bzdz);
-        if (logfile) fprintf(logfile, "\tnon-uniform external B field %lf %lf %lf applied\n", bxdx, bydy, bzdz);
+        if (screen) fprintf(screen, "\tnon-uniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
+        if (logfile) fprintf(logfile, "\tnon-uniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
       } else {
-        if (screen) fprintf(screen, "\tuniform external B field %lf %lf %lf applied\n", bxdx, bydy, bzdz);
-        if (logfile) fprintf(logfile, "\tuniform external B field %lf %lf %lf applied\n", bxdx, bydy, bzdz);
+        if (screen) fprintf(screen, "\tuniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
+        if (logfile) fprintf(logfile, "\tuniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
       }
     }
 
@@ -167,18 +195,50 @@ FixMspinNH::~FixMspinNH()
 int FixMspinNH::setmask()
 {
   int mask = 0;
+  
+  // Get the base masks
   mask = FixRigidNH::setmask();
-  if (zeeman_flag || dipolar_flag) mask |= FixConst::THERMO_ENERGY;
+
+  // Add additional force calculation procedures
+  if (zeeman_flag || dipolar_flag) mask |= FixConst::POST_FORCE;
   return mask;
 }
 
 void FixMspinNH::init()
 {
+  // Call base
   FixRigidNH::init();
   calculate_dipoles(1);
 }
 
-void FixMspinNH::calculate_dipoles(int initialize = 0)
+// called immediately before the first timestep and
+// after forces are computed (optional)
+void FixMspinNH::setup(int vflag)
+{
+  // Call base
+  FixRigidNH::setup(vflag);
+  post_force(vflag);
+}
+
+void FixMspinNH::post_force(int vflag)
+{
+  // Call base
+  FixRigidNH::post_force(vflag);
+
+  // Late force computation is not possible
+  // since we need to add additional magnetic forces
+  if (!earlyflag) compute_forces_and_torques();
+
+  calculate_dipoles(0);
+
+  // compute and add the extra magnetic forces
+  if(zeeman_flag == 1) compute_zeeman();
+  if(dipolar_flag == 1) compute_dipolar();
+
+  earlyflag = 1;
+}
+
+void FixMspinNH::calculate_dipoles(int initialize)
 {
   int ibody;
   double *q = atom->qm;
@@ -193,13 +253,12 @@ void FixMspinNH::calculate_dipoles(int initialize = 0)
     mu[i][0] = mu[i][1] = mu[i][2] = 0.0;
     dq[i][0] = dq[i][1] = dq[i][2] = 0.0;
     qm[i] = 0.0;
-    if (initialize)
-      qmcount[i] = 0;
+    if (initialize) qmcount[i] = 0;
   }
 
   // loop over all proc atoms
   // @todo: instead of looping over all the atoms at each step
-  //        is there a way to keep track of our MS atoms?
+  //        is there a way to keep track of the MS atoms?
   for (int i = 0; i < nlocal; i++)
   {
     // if atom is a part of a rigid body, get the body's id
@@ -243,7 +302,7 @@ void FixMspinNH::calculate_dipoles(int initialize = 0)
   {
     // printf("Proc [%d]: qmcount[%d] %d\n", me, i, qmcount[i]);
     if (initialize && qmcount[i] != 2)
-      error->all(FLERR, "Fix mspin/rigid requires exactly 2 non-zero qm atoms per molecule.");
+      error->all(FLERR, "Fix rigid/mspin requires exactly 2 non-zero qm atoms per particle.");
 
     // qmag charge in kilo-e/fs units, multiply by 1000
     mu[i][0] = 1000 * beta * qm[i] * dq[i][0];
@@ -258,42 +317,15 @@ void FixMspinNH::calculate_dipoles(int initialize = 0)
       double m = sqrt(mu[i][0]*mu[i][0]+mu[i][1]*mu[i][1]+mu[i][2]*mu[i][2]) / 1000.0;
 
       if(screen) fprintf(screen, "\tDipole %d: qm = %lf Ke/fs A\td = %lf A\tmu = %lf Ke/fs A^2\n",
-                i, qm[i], d, m);
+                i+1, qm[i], d, m);
       if(logfile) fprintf(logfile, "\tDipole %d: qm = %lf Ke/fs A\td = %lf A\tmu = %lf Ke/fs A^2\n",
-                i, qm[i], d, m);
+                i+1, qm[i], d, m);
+      if(screen) fprintf(screen, "\tEffective dipole moment [%d]:\tbeta * mu = %lf x 10^-21 A m^2\n",
+                i+1, m * beta * 1.6022);
+      if(logfile) fprintf(logfile, "\tEffective dipole moment [%d]:\tbeta * mu = %lf x 10^-21 A m^2\n",
+                i+1, m * beta * 1.6022);
     }
   }
-}
-
-void FixMspinNH::final_integrate()
-{
-  // first calculate the forces on the body by member atoms
-  // if langflag is on, this is already done in post_force()
-  if (!langflag)
-    FixRigidNH::compute_forces_and_torques();
-
-  // forces have been calculated
-  earlyflag = 1;
-
-  // // compute and add the extra forces
-  if(zeeman_flag == 1) compute_zeeman();
-  if(dipolar_flag == 1) compute_dipolar();
-
-  // call the base method to integrate
-  FixRigidNH::final_integrate();
-
-  // update new dipole values
-  // we are doing it after force update, since we already initialized before
-  if (dipolar_flag == 1 || zeeman_flag == 1)
-    calculate_dipoles();
-
-  // for (int ibody = 0; ibody < nbody; ibody++) {
-  //     printf("Proc [%d]: Fcm[%d] %f, %f, %f \n", me,
-  //                 ibody, fcm[ibody][0], fcm[ibody][1], fcm[ibody][2]);
-
-  // //     // printf("Proc [%d]: Tcm[%d] %f, %f, %f \n", me,
-  // //     //             ibody, torque[ibody][0], torque[ibody][1], torque[ibody][2]);
-  // }
 }
 
 void FixMspinNH::compute_zeeman()
@@ -361,12 +393,19 @@ void FixMspinNH::compute_dipolar()
   // @todo: there has to be a better way to do it, but it works for now. :) 
   for (int ibody = 0; ibody < nbody - 1; ibody++)
   {
+    double iwrap[3];
+    domain->unmap(xcm[ibody],imagebody[ibody], iwrap);
+
     for (int jbody = ibody + 1; jbody < nbody; jbody++)
     {
+      // unwrap the rigid COM
+      double jwrap[3];
+      domain->unmap(xcm[jbody],imagebody[jbody], jwrap);
+
       // cm to cm distance
-      delx = xcm[ibody][0] - xcm[jbody][0];
-      dely = xcm[ibody][1] - xcm[jbody][1];
-      delz = xcm[ibody][2] - xcm[jbody][2];
+      delx = iwrap[0] - jwrap[0];
+      dely = iwrap[1] - jwrap[1];
+      delz = iwrap[2] - jwrap[2];
 
       rsq = delx * delx + dely * dely + delz * delz;
 
@@ -436,25 +475,32 @@ void FixMspinNH::compute_dipolar()
   }
 }
 
-// return total magnetic potential energy
+// return total potential energy
 double FixMspinNH::compute_scalar()
 {
-  double energy = 0.0;
+  // Call base
+  double energy = FixRigidNH::compute_scalar();
+
+  // additional energy due to magnetic interactions
   energy += extract_zeeman_pe();
   energy += extract_dipolar_pe();
+
   return energy;
 }
 
+// Return Zeeman PE to output as thermo
 double FixMspinNH::extract_zeeman_pe()
 {
   return zeeman_flag * zeeman_pe;
 }
 
+// Return dipolar PE to output as thermo
 double FixMspinNH::extract_dipolar_pe()
 {
   return dipolar_flag * dipolar_pe;
 }
 
+// COM distance between two rigid bodies
 double FixMspinNH::extract_distance(int ibody, int jbody)
 {
   double delx, dely, delz, d;

@@ -7,19 +7,20 @@ and Dipolar Assembly of Magnetic Nanoparticles.* **Journal of Chemical Theory an
 
 Please cite the paper above if used.
 
-Author:   
+Author:
 Akhlak Mahmood   
 Yingling Group, MSE   
 NC State University, USA
 
-**Note:** If you are interested in the latest source code of the plugin, please see the 
-[plugin branch](https://github.com/yingling-group/lammps-mspin/tree/plugin "plugin branch").
+**Note**: If you are interested in the source code of the developed package, please see the [src/MSPIN](https://github.com/yingling-group/lammps-mspin/tree/main/src/MSPIN) directory. 
+
+Base LAMMPS version: [29 Sep 2021 Stable - Update 3](https://github.com/lammps/lammps/releases/tag/stable_29Sep2021_update3)
 
 ## Installation
 
-1. Clone the main branch to your local machine.
+1. Clone the repository to your local machine.
     ```
-    git clone --branch main https://github.com/yingling-group/lammps-mspin.git
+    git clone --depth 10 https://github.com/yingling-group/lammps-mspin.git
     ```
 
 2. CD to the cloned directory and create a build directory.
@@ -27,7 +28,7 @@ NC State University, USA
     cd lammps-mspin
     mkdir build
     ```
-3. Run CMake with the `user.cmake` preset from the build directory.
+3. Run CMake with the `mspin.cmake` preset from the build directory.
     ```
     cd build
     cmake3 -C ../cmake/presets/user.cmake ../cmake
@@ -35,17 +36,18 @@ NC State University, USA
 
 4. Build.
     ```
-    make -j4
+    cmake3 --build .
     ```
 
 A LAMMPS excutable `lmp_mpi` will be generated in the `build` directory.
+You can update the `mspin.cmake` preset file to turn on the `PKG_GPU` if your machine supports it.
 
 ## Usage
 Example data and input files of a bare Fe3O4 MNP solvated in hexane can be found in the `examples/mspin` directory.
 
 General steps to follow:
 1. Identify two atoms in the MNP core to set as 'MS' atoms.
-2. Calculate the distance between the two atoms, required "magnetic charge", Qm.
+2. Calculate the distance between the two atoms, `d`, and the required "magnetic charge", `Qm`, such that the dipole momement of the MNP, `mu = d * Qm`.
 3. Generate a LAMMPS data file using the newly defined `qmag` atom style with the calculated Qm values.
 Make sure that one of the "MS" atoms has a positive Qm value, and the other has a negative Qm value.
 2. Create a LAMMPS input file and define magnetic interactions using the commands described below.
@@ -62,8 +64,8 @@ As an example, the bulk saturation magnetization of Fe3O4 is 480 KAmpere/Meter
 In LAMMPS "real" unit,
 
 				M	= 480E+3 Ampere/Meter
-				    	= 480 * 6241.5 / 1E+10 Ke /fs / Angstrom
-                    			= 0.000300 Ke/fs/Angstrom
+				    = 480 * 6241.5 / 1E+10 Ke /fs / Angstrom
+                    = 0.000300 Ke/fs/Angstrom
 
 For a 7 nm nanoparticle, the magnetic dipole moment
 
@@ -179,5 +181,6 @@ fix <fix_id> feo rigid/mspin molecule temp 300 300 10 bfield 0.5 0.0 0.0 uniform
 - Only MPI parallelization is supported for the magnetic interactions.
 K-space and pairwise interaction calculations can still be accelerated using GPU code.
 - Only the 'real' units of LAMMPS are supported and/or tested.
-- Timestep needs to be `1.0 fs`
-
+- Timestep needs to be `1.0 fs` if simulation is run in vacuum condition,
+    if you have solvents in the system, timestep can be set to `2.0 fs`,
+    please use SHAKE to restraint the H atoms to avoid any issue relating to stability.

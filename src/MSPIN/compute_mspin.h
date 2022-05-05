@@ -1,3 +1,7 @@
+/* ----------------------------------------------------------------------
+            Contributing author: Akhlak Mahmood (NC State)
+------------------------------------------------------------------------- */
+
 #ifdef COMPUTE_CLASS
 
 ComputeStyle(mspin,ComputeMspin)

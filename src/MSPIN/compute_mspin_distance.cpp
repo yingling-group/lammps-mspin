@@ -1,3 +1,7 @@
+/* ----------------------------------------------------------------------
+            Contributing author: Akhlak Mahmood (NC State)
+------------------------------------------------------------------------- */
+
 #include <cstdio>
 #include <cstring>
 #include "error.h"
@@ -26,8 +30,8 @@ ComputeMSDistance::ComputeMSDistance(LAMMPS *lmp, int narg, char **arg) :
   rfix = new char[n];
   strcpy(rfix, arg[3]);
 
-  ibody = force->inumeric(FLERR, arg[4]) - 1;
-  jbody = force->inumeric(FLERR, arg[5]) - 1;
+  ibody = utils::inumeric(FLERR, arg[4], false, lmp) - 1;
+  jbody = utils::inumeric(FLERR, arg[5], false, lmp) - 1;
 
   memory->create(vector, size_vector, "compute/mspin:distance");
 }

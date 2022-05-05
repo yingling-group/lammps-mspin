@@ -1,7 +1,11 @@
+/* ----------------------------------------------------------------------
+            Contributing author: Akhlak Mahmood (NC State)
+------------------------------------------------------------------------- */
+
 #ifdef FIX_CLASS
-
+// clang-format off
 FixStyle(mspin/nh, FixMspinNH)
-
+// clang-format on
 #else 
 
 #ifndef LMP_FIX_MSPIN_NH_H
@@ -17,7 +21,8 @@ namespace LAMMPS_NS {
       virtual ~FixMspinNH();
       virtual int setmask();
       virtual void init();
-      virtual void final_integrate();
+      virtual void setup(int);
+      virtual void post_force(int);
       virtual void compute_zeeman();
       virtual void compute_dipolar();
       virtual double compute_scalar();
@@ -54,5 +59,4 @@ namespace LAMMPS_NS {
 
 #endif
 #endif 
-
 

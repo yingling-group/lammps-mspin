@@ -1,3 +1,7 @@
+/* ----------------------------------------------------------------------
+            Contributing author: Akhlak Mahmood (NC State)
+------------------------------------------------------------------------- */
+
 #include <cstdio>
 #include <cstring>
 #include "error.h"
@@ -18,6 +22,8 @@ ComputeMspin::ComputeMspin(LAMMPS *lmp, int narg, char **arg) :
 
   vector_flag = 1;
   size_vector = 2;
+
+  // are the quantities extensive or intensive
   extvector = 0;
   extlist = new int[size_vector];
   extlist[0] = 0;

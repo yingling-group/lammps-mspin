@@ -1,3 +1,7 @@
+/* ----------------------------------------------------------------------
+            Contributing author: Akhlak Mahmood (NC State)
+------------------------------------------------------------------------- */
+
 #include "fix_mspin_nvt.h"
 #include "error.h"
 
@@ -27,4 +31,3 @@ FixMspinNVT::FixMspinNVT(LAMMPS *lmp, int narg, char **arg) :
   if (t_order != 3 && t_order != 5)
     error->all(FLERR,"Fix mspin/nvt temperature order must be 3 or 5");
 }
-
