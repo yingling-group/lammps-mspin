@@ -18,12 +18,13 @@ set(BUILD_MPI ON CACHE BOOL "" FORCE)
 set(LAMMPS_MACHINE mpi CACHE STRING "" FORCE)
 
 # Turn on GPU support
-# set(PKG_GPU ON CACHE BOOL "" FORCE)
-# set(GPU_API cuda CACHE STRING "" FORCE)
-# set(LAMMPS_MACHINE cuda CACHE STRING "" FORCE)
+set(PKG_GPU ON CACHE BOOL "" FORCE)
+set(GPU_API cuda CACHE STRING "" FORCE)
+set(LAMMPS_MACHINE cuda CACHE STRING "" FORCE)
 
+# Uncomment the gencode line corresponding to your GPU card
 # Turing: RTX 2070
-# set(GPU_ARCH sm_75 CACHE STRING "" FORCE)
+set(GPU_ARCH sm_75 CACHE STRING "" FORCE)
 
 # Maxwell: Quadro M6000 , GeForce 900, GTX-970, GTX-980, GTX Titan X
 # set(GPU_ARCH sm_52 CACHE STRING "" FORCE)
