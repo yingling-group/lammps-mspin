@@ -415,8 +415,7 @@ FixRigid::FixRigid(LAMMPS *lmp, int narg, char **arg) :
 
     } else if (strcmp(arg[iarg],"temp") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal fix rigid command");
-      // MSPIN UPDATE
-      if (!utils::strmatch(style,"^rigid/n.t") && !utils::strmatch(style,"^rigid/mspin"))
+      if (!utils::strmatch(style,"^rigid/n.t"))
         error->all(FLERR,"Illegal fix rigid command");
       tstat_flag = 1;
       t_start = utils::numeric(FLERR,arg[iarg+1],false,lmp);
@@ -546,10 +545,8 @@ FixRigid::FixRigid(LAMMPS *lmp, int narg, char **arg) :
       delete [] id_gravity;
       id_gravity = utils::strdup(arg[iarg+1]);
       iarg += 2;
-    }
-    // MSPIN UPDATE
-    // else error->all(FLERR,"Illegal fix rigid command");
-    iarg++;   // allow additional arguments
+
+    } else error->all(FLERR,"Illegal fix rigid command");
   }
 
   // set pstat_flag
