@@ -2,7 +2,7 @@
 # Please note that, the RIGID package must be enabled for MSPIN to work.
 # USAGE: cmake ../cmake/ -C ../cmake/presets/mspin.cmake
 
-set(ALL_PACKAGES KSPACE MOLECULE RIGID MSPIN)
+set(ALL_PACKAGES KSPACE MOLECULE RIGID MSPIN EXTRA-DUMP)
 
 foreach(PKG ${ALL_PACKAGES})
   set(PKG_${PKG} ON CACHE BOOL "" FORCE)
