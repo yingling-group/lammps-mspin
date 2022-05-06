@@ -505,12 +505,19 @@ double FixMspinNH::extract_distance(int ibody, int jbody)
 {
   double delx, dely, delz, d;
 
-  if(ibody >= nbody or jbody >= nbody) error->all(FLERR, "Invalid molecule id for distance");
+  double iwrap[3];
+  double jwrap[3];
+
+  if(ibody > nbody or jbody > nbody) error->all(FLERR, "Invalid molecule id for distance computation");
+  if(ibody == 0 or jbody == 0) error->all(FLERR, "Invalid molecule id for distance computation");
   
-  // cm to cm distance
-  delx = xcm[ibody][0] - xcm[jbody][0];
-  dely = xcm[ibody][1] - xcm[jbody][1];
-  delz = xcm[ibody][2] - xcm[jbody][2];
+  domain->unmap(xcm[ibody-1],imagebody[ibody-1], iwrap);
+  domain->unmap(xcm[jbody-1],imagebody[jbody-1], jwrap);
+
+  // unwrapped cm to cm distance
+  delx = iwrap[0] - jwrap[0];
+  dely = iwrap[1] - jwrap[1];
+  delz = iwrap[2] - jwrap[2];
 
   return sqrt(delx*delx + dely*dely + delz*delz);
 }
