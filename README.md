@@ -3,7 +3,7 @@ LAMMPS plugin `MSPIN` for atomistic molecular dynamics simulations of magnetic n
 
 Developed for simulation method described in:
 > A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
-and Dipolar Assembly of Magnetic Nanoparticles.* **Journal of Chemical Theory and Computation** (2022) [doi:10.1021/acs.jctc.1c01253](https://doi.org/10.1021/acs.jctc.1c01253 "DOI").
+and Dipolar Assembly of Magnetic Nanoparticles.* **Journal of Chemical Theory and Computation** 2022, 18 (5), 3122–3135 [doi:10.1021/acs.jctc.1c01253](https://doi.org/10.1021/acs.jctc.1c01253 "DOI").
 
 Please cite the paper above if used.
 
