@@ -25,8 +25,8 @@ static const char cite_fix_mspin_c[] =
   " title = {All-Atom Simulation Method for Zeeman Alignment and Dipolar Assembly of Magnetic Nanoparticles},\n"
   " journal = {Journal of Chemical Theory and Computation},\n"
   " year =    2022,\n"
-  " volume =  XXXX,\n"
-  " pages =   {XXX-XXX}\n"
+  " volume =  18(5),\n"
+  " pages =   {3122-3135}\n"
   "}\n\n";
 
 /* ---------------------------------------------------------------------- */
