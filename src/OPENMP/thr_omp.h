@@ -46,7 +46,7 @@ class ThrOMP {
 
  public:
   ThrOMP(LAMMPS *, int);
-  virtual ~ThrOMP();
+  virtual ~ThrOMP() = default;
 
   double memory_usage_thr();
 
@@ -129,6 +129,8 @@ class ThrOMP {
   void ev_tally_thr(Pair *const, const int, const int, const int, const int, const double,
                     const double, const double, const double, const double, const double,
                     ThrData *const);
+  void ev_tally_full_thr(Pair *const, const int, const double, const double, const double,
+                         const double, const double, const double, ThrData *const);
   void ev_tally_xyz_thr(Pair *const, const int, const int, const int, const int, const double,
                         const double, const double, const double, const double, const double,
                         const double, const double, ThrData *const);

@@ -197,11 +197,9 @@ void PPPM::init()
     error->all(FLERR,"Must redefine kspace_style after changing to triclinic box");
 
   if (domain->triclinic && differentiation_flag == 1)
-    error->all(FLERR,"Cannot (yet) use PPPM with triclinic box "
-               "and kspace_modify diff ad");
+    error->all(FLERR,"Cannot (yet) use PPPM with triclinic box and kspace_modify diff ad");
   if (domain->triclinic && slabflag)
-    error->all(FLERR,"Cannot (yet) use PPPM with triclinic box and "
-               "slab correction");
+    error->all(FLERR,"Cannot (yet) use PPPM with triclinic box and slab correction");
   if (domain->dimension == 2)
     error->all(FLERR,"Cannot use PPPM with 2d simulation");
 
@@ -229,7 +227,7 @@ void PPPM::init()
   pair_check();
 
   int itmp = 0;
-  double *p_cutoff = (double *) force->pair->extract("cut_coul",itmp);
+  auto p_cutoff = (double *) force->pair->extract("cut_coul",itmp);
   if (p_cutoff == nullptr)
     error->all(FLERR,"KSpace style is incompatible with Pair style");
   cutoff = *p_cutoff;
@@ -242,7 +240,7 @@ void PPPM::init()
   if (tip4pflag) {
     if (me == 0) utils::logmesg(lmp,"  extracting TIP4P info from pair style\n");
 
-    double *p_qdist = (double *) force->pair->extract("qdist",itmp);
+    auto p_qdist = (double *) force->pair->extract("qdist",itmp);
     int *p_typeO = (int *) force->pair->extract("typeO",itmp);
     int *p_typeH = (int *) force->pair->extract("typeH",itmp);
     int *p_typeA = (int *) force->pair->extract("typeA",itmp);
@@ -321,8 +319,7 @@ void PPPM::init()
 
   if (order < minorder) error->all(FLERR,"PPPM order < minimum allowed order");
   if (!overlap_allowed && !gctmp->ghost_adjacent())
-    error->all(FLERR,"PPPM grid stencil extends "
-               "beyond nearest neighbor processor");
+    error->all(FLERR,"PPPM grid stencil extends beyond nearest neighbor processor");
   if (gctmp) delete gctmp;
 
   // adjust g_ewald
@@ -571,8 +568,7 @@ void PPPM::setup_grid()
   allocate();
 
   if (!overlap_allowed && !gc->ghost_adjacent())
-    error->all(FLERR,"PPPM grid stencil extends "
-               "beyond nearest neighbor processor");
+    error->all(FLERR,"PPPM grid stencil extends beyond nearest neighbor processor");
 
   // pre-compute Green's function denomiator expansion
   // pre-compute 1d charge distribution coefficients
@@ -983,7 +979,7 @@ void PPPM::set_grid_global()
 
       h = h_x = h_y = h_z = 4.0/g_ewald;
       int count = 0;
-      while (1) {
+      while (true) {
 
         // set grid dimensions
 
@@ -2612,7 +2608,7 @@ void PPPM::fieldforce_peratom()
 
 void PPPM::pack_forward_grid(int flag, void *vbuf, int nlist, int *list)
 {
-  FFT_SCALAR *buf = (FFT_SCALAR *) vbuf;
+  auto buf = (FFT_SCALAR *) vbuf;
 
   int n = 0;
 
@@ -2672,7 +2668,7 @@ void PPPM::pack_forward_grid(int flag, void *vbuf, int nlist, int *list)
 
 void PPPM::unpack_forward_grid(int flag, void *vbuf, int nlist, int *list)
 {
-  FFT_SCALAR *buf = (FFT_SCALAR *) vbuf;
+  auto buf = (FFT_SCALAR *) vbuf;
 
   int n = 0;
 
@@ -2732,7 +2728,7 @@ void PPPM::unpack_forward_grid(int flag, void *vbuf, int nlist, int *list)
 
 void PPPM::pack_reverse_grid(int flag, void *vbuf, int nlist, int *list)
 {
-  FFT_SCALAR *buf = (FFT_SCALAR *) vbuf;
+  auto buf = (FFT_SCALAR *) vbuf;
 
   if (flag == REVERSE_RHO) {
     FFT_SCALAR *src = &density_brick[nzlo_out][nylo_out][nxlo_out];
@@ -2747,7 +2743,7 @@ void PPPM::pack_reverse_grid(int flag, void *vbuf, int nlist, int *list)
 
 void PPPM::unpack_reverse_grid(int flag, void *vbuf, int nlist, int *list)
 {
-  FFT_SCALAR *buf = (FFT_SCALAR *) vbuf;
+  auto buf = (FFT_SCALAR *) vbuf;
 
   if (flag == REVERSE_RHO) {
     FFT_SCALAR *dest = &density_brick[nzlo_out][nylo_out][nxlo_out];
@@ -2919,7 +2915,7 @@ void PPPM::slabcorr()
 
   double *q = atom->q;
   double **x = atom->x;
-  double zprd = domain->zprd;
+  double zprd_slab = domain->zprd*slab_volfactor;
   int nlocal = atom->nlocal;
 
   double dipole = 0.0;
@@ -2948,7 +2944,7 @@ void PPPM::slabcorr()
   // compute corrections
 
   const double e_slabcorr = MY_2PI*(dipole_all*dipole_all -
-    qsum*dipole_r2 - qsum*qsum*zprd*zprd/12.0)/volume;
+    qsum*dipole_r2 - qsum*qsum*zprd_slab*zprd_slab/12.0)/volume;
   const double qscale = qqrd2e * scale;
 
   if (eflag_global) energy += qscale * e_slabcorr;
@@ -2959,7 +2955,7 @@ void PPPM::slabcorr()
     double efact = qscale * MY_2PI/volume;
     for (int i = 0; i < nlocal; i++)
       eatom[i] += efact * q[i]*(x[i][2]*dipole_all - 0.5*(dipole_r2 +
-        qsum*x[i][2]*x[i][2]) - qsum*zprd*zprd/12.0);
+        qsum*x[i][2]*x[i][2]) - qsum*zprd_slab*zprd_slab/12.0);
   }
 
   // add on force corrections
@@ -2981,7 +2977,7 @@ int PPPM::timing_1d(int n, double &time1d)
   for (int i = 0; i < 2*nfft_both; i++) work1[i] = ZEROF;
 
   MPI_Barrier(world);
-  time1 = MPI_Wtime();
+  time1 = platform::walltime();
 
   for (int i = 0; i < n; i++) {
     fft1->timing1d(work1,nfft_both,FFT3d::FORWARD);
@@ -2993,7 +2989,7 @@ int PPPM::timing_1d(int n, double &time1d)
   }
 
   MPI_Barrier(world);
-  time2 = MPI_Wtime();
+  time2 = platform::walltime();
   time1d = time2 - time1;
 
   if (differentiation_flag) return 2;
@@ -3011,7 +3007,7 @@ int PPPM::timing_3d(int n, double &time3d)
   for (int i = 0; i < 2*nfft_both; i++) work1[i] = ZEROF;
 
   MPI_Barrier(world);
-  time1 = MPI_Wtime();
+  time1 = platform::walltime();
 
   for (int i = 0; i < n; i++) {
     fft1->compute(work1,work1,FFT3d::FORWARD);
@@ -3023,7 +3019,7 @@ int PPPM::timing_3d(int n, double &time3d)
   }
 
   MPI_Barrier(world);
-  time2 = MPI_Wtime();
+  time2 = platform::walltime();
   time3d = time2 - time1;
 
   if (differentiation_flag) return 2;
@@ -3435,7 +3431,7 @@ void PPPM::slabcorr_groups(int groupbit_A, int groupbit_B, int AA_flag)
 
   double *q = atom->q;
   double **x = atom->x;
-  double zprd = domain->zprd;
+  double zprd_slab = domain->zprd*slab_volfactor;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
 
@@ -3491,7 +3487,7 @@ void PPPM::slabcorr_groups(int groupbit_A, int groupbit_B, int AA_flag)
   const double efact = qscale * MY_2PI/volume;
 
   e2group += efact * (dipole_A*dipole_B - 0.5*(qsum_A*dipole_r2_B +
-    qsum_B*dipole_r2_A) - qsum_A*qsum_B*zprd*zprd/12.0);
+    qsum_B*dipole_r2_A) - qsum_A*qsum_B*zprd_slab*zprd_slab/12.0);
 
   // add on force corrections
 
