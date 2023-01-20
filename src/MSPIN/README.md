@@ -41,10 +41,41 @@ set(LAMMPS_MACHINE serial CACHE STRING "" FORCE)
 ```
 
 # Update of the official code
-Other than adding files in the `src/MSPIN` and `examples/mspin` directory, the following
-changes are made to the LAMMPS official files.
+List of all modifications:
+```sh
+$ git diff lammps/stable --name-only
+
+cmake/CMakeLists.txt
+doc/src/compute_mspin_distance.rst
+doc/src/compute_mspin_energy.rst
+doc/src/fix_rigid_mspin.rst
+examples/mspin/README.md
+examples/mspin/data.mspin
+examples/mspin/in.mspin
+examples/mspin/log.3Aug2022.g++.1
+examples/mspin/log.3Aug2022.g++.4
+src/MSPIN/README.md
+src/MSPIN/compute_mspin.cpp
+src/MSPIN/compute_mspin.h
+src/MSPIN/compute_mspin_distance.cpp
+src/MSPIN/compute_mspin_distance.h
+src/MSPIN/fix_mspin_nh.cpp
+src/MSPIN/fix_mspin_nh.h
+src/MSPIN/fix_mspin_nvt.cpp
+src/MSPIN/fix_mspin_nvt.h
+src/Makefile
+src/RIGID/fix_rigid.cpp
+```
+
+Other than adding the package specific files in the `src/MSPIN`, `doc/src` and `examples/mspin` directories, the following
+changes are made to the official LAMMPS files.
 
 - `src/RIGID/fix_rigid.cpp` is updated to allow additional arguments.
-- `src/Makefile` is updated to add the name of the package to the PACKAGE list.
-- `cmake/CMakeList.txt` is updated to add the name of the pacakge to the STANDARD_PACKAGES list.
+- `src/Makefile` is updated to add the name of the package to the *make* PACKAGE list.
+- `cmake/CMakeList.txt` is updated to add the name of the pacakge to the *cmake* STANDARD_PACKAGES list.
+
+# Recent Changes
+**Jan 20, 2023**
+- Updated to the latest LAMMPS stable branch.
+[88c8b6ec6feac6740d140393a0d409437f637f8b](https://github.com/lammps/lammps/commit/88c8b6ec6feac6740d140393a0d409437f637f8b)
 
