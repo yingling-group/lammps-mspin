@@ -138,9 +138,10 @@ PACKAGE = \
 	dielectric \
 	electrode \
 	ml-iap \
-	phonon
+	phonon \
+	mspin
 
-# NOTE: the last four packages must remain at the end since
+# NOTE: the last five packages must remain at the end since
 # they depend on other packages to be installed first.
 
 PACKBASIC = kspace manybody molecule rigid
