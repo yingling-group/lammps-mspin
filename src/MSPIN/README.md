@@ -11,34 +11,33 @@ or `compute mspin/distance` commands for detailed usage instructions.
 Use of this package requires LAMMPS to be built with the RIGID package.
 
 There are example scripts for using commands in this package in the
-examples/mspin directory.
+`examples/mspin` directory.
 
 The authors of the package is Akhlak U. Mahmood (amahmoo3 at ncsu dot edu)
 and Yaroslava G. Yingling (yara_yingling at ncsu dot edu) at North Carolina
 State University, USA. Contact the authors directly if you have questions.
 
+Developed for simulation method described in:
+> A.U. Mahmood and Y.G. Yingling. *All-Atom Simulation Method for Zeeman Alignment
+and Dipolar Assembly of Magnetic Nanoparticles.* **Journal of Chemical Theory and Computation** (2022) [doi:10.1021/acs.jctc.1c01253](https://doi.org/10.1021/acs.jctc.1c01253 "DOI").
+
 # Installation
-CMake based installation preset.
 
-```cmake
-# Enable required packages
-set(ALL_PACKAGES KSPACE MOLECULE RIGID MSPIN)
-foreach(PKG ${ALL_PACKAGES})
-  set(PKG_${PKG} ON CACHE BOOL "" FORCE)
-endforeach()
-
-# Update as necessary
-set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/mspin" CACHE PATH "Default install path" FORCE)
-set(LAMMPS_MACHINE serial CACHE STRING "" FORCE)
-
-# Turn on MPI support
-# Make sure you installed openmpi or mpich
-# apt-get install libopenmpi-dev
-# set(MPI_CXX "icpx" CACHE STRING "" FORCE)
-# set(MPI_CXX_COMPILER "mpicxx" CACHE STRING "" FORCE)
-# set(BUILD_MPI ON CACHE BOOL "" FORCE)
-# set(LAMMPS_MACHINE mpi CACHE STRING "" FORCE)
+```sh
+git clone https://github.com/yingling-group/lammps-mspin.git
+cd lammps-mspin
+mkdir build
+cd build
+cmake -C ../cmake/presets/mspin.cmake ../cmake
+make -j4
 ```
+Please update the `cmake/presets/mspin.cmake` preset file according to your machine's configuration before building.
+
+# Usage
+This package adds one `fix` and two `computes`. Please see the following doc files for usage details.
+- doc/src/fix_rigid_mspin.rst
+- doc/src/compute_mspin_distance.rst
+- doc/src/compute_mspin_energy.rst
 
 # Update of the official code
 List of all modifications:
@@ -46,6 +45,7 @@ List of all modifications:
 $ git diff lammps/stable --name-only
 
 cmake/CMakeLists.txt
+cmake/presets/mspin.cmake
 doc/src/compute_mspin_distance.rst
 doc/src/compute_mspin_energy.rst
 doc/src/fix_rigid_mspin.rst
@@ -70,13 +70,13 @@ src/RIGID/fix_rigid.cpp
 Other than adding the package specific files in the `src/MSPIN`, `doc/src` and `examples/mspin` directories, the following
 changes are made to the official LAMMPS files.
 
-- `src/RIGID/fix_rigid.cpp` is updated to allow additional arguments.
-- `src/Makefile` is updated to add the name of the package to the *make* PACKAGE list.
-- `cmake/CMakeList.txt` is updated to add the name of the pacakge to the *cmake* STANDARD_PACKAGES list.
-- `.github` directory is removed.
+- `src/RIGID/fix_rigid.cpp` updated to allow additional arguments.
+- `src/Makefile` updated to add the name of the package to the *make* PACKAGE list.
+- `cmake/CMakeList.txt` updated to add the name of the pacakge to the *cmake* STANDARD_PACKAGES list.
+- `.github` directory removed.
 
 # Recent Changes
 **Jan 20, 2023**
 - Updated to the latest LAMMPS stable branch.
 [88c8b6ec6feac6740d140393a0d409437f637f8b](https://github.com/lammps/lammps/commit/88c8b6ec6feac6740d140393a0d409437f637f8b)
-
+- Modified the source code to add and use a custom atom property for the `qm` magnetic charge values.
