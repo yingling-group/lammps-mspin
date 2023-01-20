@@ -73,6 +73,7 @@ changes are made to the official LAMMPS files.
 - `src/RIGID/fix_rigid.cpp` is updated to allow additional arguments.
 - `src/Makefile` is updated to add the name of the package to the *make* PACKAGE list.
 - `cmake/CMakeList.txt` is updated to add the name of the pacakge to the *cmake* STANDARD_PACKAGES list.
+- `.github` directory is removed.
 
 # Recent Changes
 **Jan 20, 2023**
