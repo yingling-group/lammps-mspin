@@ -1,41 +1,62 @@
 /* ----------------------------------------------------------------------
-            Contributing author: Akhlak Mahmood (NC State)
+   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+   https://www.lammps.org/, Sandia National Laboratories
+   Steve Plimpton, sjplimp@sandia.gov
+
+   Copyright (2003) Sandia Corporation.  Under the terms of Contract
+   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+   certain rights in this software.  This software is distributed under
+   the GNU General Public License.
+
+   See the README file in the top-level LAMMPS directory.
+------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------
+   Contributing author: Akhlak Mahmood
+
+   Contact:
+     Department of Materials Science and Engineering,
+     North Carolina State University,
+     Raleigh, NC, USA
+
+     amahmoo3@ncsu.edu; mahmoodakhlak@gmail.com
 ------------------------------------------------------------------------- */
 
 #include "fix_mspin_nh.h"
 
-#include <cstdio>
-#include <cmath>
-#include <cstring>
-#include "error.h"
-#include "memory.h"
 #include "atom.h"
+#include "citeme.h"
+#include "domain.h"
+#include "error.h"
 #include "force.h"
 #include "math_const.h"
-#include "domain.h"
-#include "citeme.h"
+#include "memory.h"
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 
 using namespace std;
 using namespace LAMMPS_NS;
 
-static const char cite_fix_mspin_c[] =
-  "rigid/mspin command: doi:10.1021/acs.jctc.1c01253\n\n"
-  "@Article{Mahmood22,\n"
-  " author = {A.U. Mahmood and Y.G. Yingling},\n"
-  " title = {All-Atom Simulation Method for Zeeman Alignment and Dipolar Assembly of Magnetic Nanoparticles},\n"
-  " journal = {Journal of Chemical Theory and Computation},\n"
-  " year =    2022,\n"
-  " volume =  18(5),\n"
-  " pages =   {3122-3135}\n"
-  "}\n\n";
+static const char cite_fix_mspin_c[] = "mspin package: doi:10.1021/acs.jctc.1c01253\n\n"
+                                       "@Article{Mahmood22,\n"
+                                       " author = {A.U. Mahmood and Y.G. Yingling},\n"
+                                       " title = {All-Atom Simulation Method for Zeeman Alignment "
+                                       "and Dipolar Assembly of Magnetic Nanoparticles},\n"
+                                       " journal = {Journal of Chemical Theory and Computation},\n"
+                                       " year =    2022,\n"
+                                       " volume =  18(5),\n"
+                                       " pages =   {3122-3135}\n"
+                                       "}\n\n";
 
 /* ---------------------------------------------------------------------- */
 
-FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg, arg), mu(nullptr), dq(nullptr), qmcount(nullptr)
+FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) :
+    FixRigidNH(lmp, narg, arg), mu(nullptr), dq(nullptr), qmcount(nullptr)
 {
   if (lmp->citeme) lmp->citeme->add(cite_fix_mspin_c);
 
-  if (rstyle != 1) // MOLECULE should be 1
+  if (rstyle != 1)    // MOLECULE should be 1
     error->all(FLERR, "Fix mspin requires molecule style");
 
   // set default flag values
@@ -63,18 +84,21 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
   extscalar = 0;
 
   // we need a unit multiplier for Tesla
-  qb2f = force->qe2f * 1.0E-5;  // qe2f units * fs/e/A
+  qb2f = force->qe2f * 1.0E-5;    // qe2f units * fs/e/A
 
-  mu_0 = 4.6434E-4; // force/Ampere^2 in real
+  mu_0 = 4.6434E-4;    // force/Ampere^2 in real
+
+  // check if qm property has been set
+  int flag, ncols;
+  qm_icustom = atom->find_custom("qm", flag, ncols);
+  if (qm_icustom < 0 || flag == 0 || ncols > 0)
+    error->all(FLERR, "Fix property/atom d_qm not set from magnetic dipole moment");
 
   int iarg = 2;
-  while (iarg < narg)
-  {
+  while (iarg < narg) {
     // external B field, Zeeman calculations ON
-    if (strcmp(arg[iarg], "bfield") == 0)
-    {
-      if (iarg + 4 > narg)
-        error->all(FLERR, "Illegal fix mspin bfield keyword");
+    if (strcmp(arg[iarg], "bfield") == 0) {
+      if (iarg + 4 > narg) error->all(FLERR, "Illegal fix mspin bfield keyword");
 
       // Parse the jacobian components from the args
       // If it's an uniform field, we will treat these as xyz components
@@ -85,8 +109,7 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
 
       zeeman_flag = 1;
 
-      if (iarg + 1 < narg && strcmp(arg[iarg + 1], "uniform") == 0)
-      {
+      if (iarg + 1 < narg && strcmp(arg[iarg + 1], "uniform") == 0) {
         // optional 'uniform' specified?
         uniform_field = 1;
         iarg++;
@@ -94,29 +117,23 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
     }
 
     // turn on dipole dipole interaction
-    if (strcmp(arg[iarg], "dpcut") == 0)
-    {
-      if (iarg + 2 > narg)
-        error->all(FLERR, "Illegal fix mspin dpcut keyword");
+    if (strcmp(arg[iarg], "dpcut") == 0) {
+      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix mspin dpcut keyword");
       dipolar_flag = 1;
       dipole_cutoff = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg++;
     }
 
     // dipolar scaling factor
-    if (strcmp(arg[iarg], "alpha") == 0)
-    {
-      if (iarg + 2 > narg)
-        error->all(FLERR, "Illegal fix mspin alpha keyword");
+    if (strcmp(arg[iarg], "alpha") == 0) {
+      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix mspin alpha keyword");
       alpha = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg++;
     }
 
     // zeeman+dipolar scaling factor
-    if (strcmp(arg[iarg], "beta") == 0)
-    {
-      if (iarg + 2 > narg)
-        error->all(FLERR, "Illegal fix mspin beta keyword");
+    if (strcmp(arg[iarg], "beta") == 0) {
+      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix mspin beta keyword");
       beta = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg++;
     }
@@ -126,8 +143,10 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
 
   // alpha is only relevant for dipolar interaction
   // check if dipolar interaction is turned on if alpha is not the default
-  if ( !dipolar_flag && alpha != 1.0 )
-    error->all(FLERR, "Scaling factor alpha applies to dipolar interaction only. Did you forget the dpcut keyword?");
+  if (!dipolar_flag && alpha != 1.0)
+    error->all(FLERR,
+               "Scaling factor alpha applies to dipolar interaction only. Did you forget the dpcut "
+               "keyword?");
 
   // we assume the B field changes only in x or y or z directions
   // dBz/dx = 0, for example, and so on (i.e. a diagonal Jacobian).
@@ -135,51 +154,70 @@ FixMspinNH::FixMspinNH(LAMMPS *lmp, int narg, char **arg) : FixRigidNH(lmp, narg
   bydx = bydz = 0.0;
   bzdx = bzdy = 0.0;
 
-  memory->create(mu, nbody, 3, "rigid:mu");
-  memory->create(dq, nbody, 3, "rigid:dq");
-  memory->create(qm, nbody, "rigid:qm");
-  memory->create(qmcount, nbody, "rigid:mspin_count");
+  memory->create(mu, nbody, 3, "mspin:mu");
+  memory->create(dq, nbody, 3, "mspin:dq");
+  memory->create(qm, nbody, "mspin:qm");
+  memory->create(qmcount, nbody, "mspin:mspin_count");
 
   // initialize constants/counts
-  nsum =0;
+  nsum = 0;
   for (int ibody = 0; ibody < nbody; ibody++) nsum += nrigid[ibody];
 
   if (me == 0) {
 
+    if (screen) fprintf(screen, "\nMSPIN initialization ...\n");
+    if (logfile) fprintf(logfile, "\nMSPIN initialization ...\n");
+
     if (nbody == 1 && dipolar_flag == 1) {
-      if (screen) fprintf(screen, "\tonly 1 rigid body found, turning off dipolar interaction\n");
-      if (logfile) fprintf(logfile, "\tonly 1 rigid body found, turning off dipolar interaction\n");
+      if (screen) fprintf(screen, "  only 1 rigid body found, turning off dipolar interaction\n");
+      if (logfile) fprintf(logfile, "  only 1 rigid body found, turning off dipolar interaction\n");
 
       dipolar_flag = 0;
     }
 
     if (dipolar_flag == 1) {
-      if (screen) fprintf(screen, "\timplementing magnetic dipolar interactions with cutoff %f A\n",
-              dipole_cutoff);
-      if(logfile) fprintf(logfile, "\timplementing magnetic dipolar interactions with cutoff %f A\n",
-              dipole_cutoff);
+      if (screen)
+        fprintf(screen, "  implementing magnetic dipolar interactions with cutoff %f A\n",
+                dipole_cutoff);
+      if (logfile)
+        fprintf(logfile, "  implementing magnetic dipolar interactions with cutoff %f A\n",
+                dipole_cutoff);
 
-      if (screen) fprintf(screen, "\tdipolar interaction scaling factor alpha %f\n", alpha);
-      if (logfile) fprintf(logfile, "\tdipolar interaction scaling factor alpha %f\n", alpha);
+      if (screen) fprintf(screen, "  dipolar interaction scaling factor alpha %f\n", alpha);
+      if (logfile) fprintf(logfile, "  dipolar interaction scaling factor alpha %f\n", alpha);
     }
 
     if (zeeman_flag == 1) {
       if (uniform_field == 0) {
-        if (screen) fprintf(screen, "\tnon-uniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
-        if (logfile) fprintf(logfile, "\tnon-uniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
+        if (screen)
+          fprintf(screen, "  non-uniform external B field %lf %lf %lf T applied\n", bxdx / qb2f,
+                  bydy / qb2f, bzdz / qb2f);
+        if (logfile)
+          fprintf(logfile, "  non-uniform external B field %lf %lf %lf T applied\n", bxdx / qb2f,
+                  bydy / qb2f, bzdz / qb2f);
       } else {
-        if (screen) fprintf(screen, "\tuniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
-        if (logfile) fprintf(logfile, "\tuniform external B field %lf %lf %lf applied\n", bxdx/qb2f, bydy/qb2f, bzdz/qb2f);
+        if (screen)
+          fprintf(screen, "  uniform external B field %lf %lf %lf T applied\n", bxdx / qb2f,
+                  bydy / qb2f, bzdz / qb2f);
+        if (logfile)
+          fprintf(logfile, "  uniform external B field %lf %lf %lf T applied\n", bxdx / qb2f,
+                  bydy / qb2f, bzdz / qb2f);
       }
     }
 
     if (!zeeman_flag && !dipolar_flag) {
-      if (screen) fprintf(screen, "\tboth zeeman and dipolar interaction is off, dynamics will be same as rigid/nh\n");
-      if (logfile) fprintf(logfile, "\tboth zeeman and dipolar interaction is off, dynamics will be same as rigid/nh\n");
+      if (screen)
+        fprintf(
+            screen,
+            "  both zeeman and dipolar interaction is off, dynamics will be same as rigid/nh\n");
+      if (logfile)
+        fprintf(
+            logfile,
+            "  both zeeman and dipolar interaction is off, dynamics will be same as rigid/nh\n");
     }
 
-    if (screen) fprintf(screen, "\tdipole moment scaling factor beta %f\n", beta);
-    if (logfile) fprintf(logfile, "\tdipole moment scaling factor beta %f\n", beta);
+    if (screen) fprintf(screen, "  dipole moment scaling factor beta %f\n", beta);
+    if (logfile) fprintf(logfile, "  dipole moment scaling factor beta %f\n", beta);
   }
 }
 
@@ -195,7 +233,7 @@ FixMspinNH::~FixMspinNH()
 int FixMspinNH::setmask()
 {
   int mask = 0;
-  
+
   // Get the base masks
   mask = FixRigidNH::setmask();
 
@@ -232,8 +270,8 @@ void FixMspinNH::post_force(int vflag)
   calculate_dipoles(0);
 
   // compute and add the extra magnetic forces
-  if(zeeman_flag == 1) compute_zeeman();
-  if(dipolar_flag == 1) compute_dipolar();
+  if (zeeman_flag == 1) compute_zeeman();
+  if (dipolar_flag == 1) compute_dipolar();
 
   earlyflag = 1;
 }
@@ -241,15 +279,13 @@ void FixMspinNH::post_force(int vflag)
 void FixMspinNH::calculate_dipoles(int initialize)
 {
   int ibody;
-  double *q = atom->qm;
   double **x = atom->x;
   int nlocal = atom->nlocal;
   imageint *image = atom->image;
-  double unwrap[3];
+  double q, unwrap[3];
 
   // reset global arrays
-  for (int i = 0; i < nbody; i++)
-  {
+  for (int i = 0; i < nbody; i++) {
     mu[i][0] = mu[i][1] = mu[i][2] = 0.0;
     dq[i][0] = dq[i][1] = dq[i][2] = 0.0;
     qm[i] = 0.0;
@@ -259,52 +295,47 @@ void FixMspinNH::calculate_dipoles(int initialize)
   // loop over all proc atoms
   // @todo: instead of looping over all the atoms at each step
   //        is there a way to keep track of the MS atoms?
-  for (int i = 0; i < nlocal; i++)
-  {
+  for (int i = 0; i < nlocal; i++) {
     // if atom is a part of a rigid body, get the body's id
     if (body[i] < 0)
       continue;
     else
       ibody = body[i];
 
+    // get the custom qm property value
+    q = atom->dvector[qm_icustom][i];
+
     // get unwrapped coordinates
     // we are interested in measuring the distance only
-    // wrapped coordinate will not work properly
-    domain->unmap(x[i],image[i],unwrap);    
+    domain->unmap(x[i], image[i], unwrap);
 
     // atom has qm defined and +ve
-    if (q[i] > 0)
-    {
-      qm[ibody] = q[i]; // we take the +ve one as qm value
+    if (q > 0) {
+      qm[ibody] = q;    // we take the +ve one as qm value
       dq[ibody][0] += unwrap[0];
       dq[ibody][1] += unwrap[1];
       dq[ibody][2] += unwrap[2];
-      if (initialize)
-        qmcount[ibody] += 1;
+      if (initialize) qmcount[ibody] += 1;
     }
-    if (q[i] < 0)
-    {
+    if (q < 0) {
       dq[ibody][0] -= unwrap[0];
       dq[ibody][1] -= unwrap[1];
       dq[ibody][2] -= unwrap[2];
-      if (initialize)
-        qmcount[ibody] += 1;
+      if (initialize) qmcount[ibody] += 1;
     }
   }
 
   MPI_Allreduce(MPI_IN_PLACE, dq[0], 3 * nbody, MPI_DOUBLE, MPI_SUM, world);
   MPI_Allreduce(MPI_IN_PLACE, &qm[0], nbody, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-  if (initialize)
-    MPI_Allreduce(MPI_IN_PLACE, &qmcount[0], nbody, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  if (initialize) MPI_Allreduce(MPI_IN_PLACE, &qmcount[0], nbody, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-  for (int i = 0; i < nbody; i++)
-  {
-    // printf("Proc [%d]: qmcount[%d] %d\n", me, i, qmcount[i]);
+  for (int i = 0; i < nbody; i++) {
     if (initialize && qmcount[i] != 2)
-      error->all(FLERR, "Fix rigid/mspin requires exactly 2 non-zero qm atoms per particle.");
+      error->all(FLERR, "Fix mspin requires exactly 2 non-zero qm atoms per particle, found: {}",
+                 qmcount[i]);
 
-    // qmag charge in kilo-e/fs units, multiply by 1000
+    // qmag charge in kilo-e/fs units, multiply by 1000 to get in e/fs unit.
     mu[i][0] = 1000 * beta * qm[i] * dq[i][0];
     mu[i][1] = 1000 * beta * qm[i] * dq[i][1];
     mu[i][2] = 1000 * beta * qm[i] * dq[i][2];
@@ -312,18 +343,24 @@ void FixMspinNH::calculate_dipoles(int initialize)
     // printf("Proc [%d]: qm[%d] %f\n", me, i, qm[i]);
 
     if (me == 0 && initialize) {
-      double d = sqrt(dq[i][0]*dq[i][0]+dq[i][1]*dq[i][1]+dq[i][2]*dq[i][2]);
+      double d = sqrt(dq[i][0] * dq[i][0] + dq[i][1] * dq[i][1] + dq[i][2] * dq[i][2]);
       // print as kilo-e units
-      double m = sqrt(mu[i][0]*mu[i][0]+mu[i][1]*mu[i][1]+mu[i][2]*mu[i][2]) / 1000.0;
+      double m =
+          sqrt(mu[i][0] * mu[i][0] + mu[i][1] * mu[i][1] + mu[i][2] * mu[i][2]) / beta / 1000;
 
-      if(screen) fprintf(screen, "\tDipole %d: qm = %lf Ke/fs A\td = %lf A\tmu = %lf Ke/fs A^2\n",
-                i+1, qm[i], d, m);
-      if(logfile) fprintf(logfile, "\tDipole %d: qm = %lf Ke/fs A\td = %lf A\tmu = %lf Ke/fs A^2\n",
-                i+1, qm[i], d, m);
-      if(screen) fprintf(screen, "\tEffective dipole moment [%d]:\tbeta * mu = %lf x 10^-21 A m^2\n",
-                i+1, m * beta * 1.6022);
-      if(logfile) fprintf(logfile, "\tEffective dipole moment [%d]:\tbeta * mu = %lf x 10^-21 A m^2\n",
-                i+1, m * beta * 1.6022);
+      if (i == 0 && screen) fprintf(screen, "\nMSPIN magnetic dipoles ...\n");
+      if (screen)
+        fprintf(screen,
+                "  Dipole %d:\tqm = %lf Ke/fs Ang.\t\td = %lf Ang.\n"
+                "\t\tmu = %lf Ke/fs Ang.^2 (real)\tbeta*mu = %lf x 10^-21 A m^2 (SI)\n",
+                i + 1, qm[i], d, m, m * beta * 1.6022);
+
+      if (i == 0 && logfile) fprintf(logfile, "\nMSPIN magnetic dipoles ...\n");
+      if (logfile)
+        fprintf(logfile,
+                "  Dipole %d:\tqm = %lf Ke/fs Ang.\t\td = %lf Ang.\n"
+                "\t\tmu = %lf Ke/fs Ang.^2 (real)\tbeta*mu = %lf x 10^-21 A m^2 (SI)\n",
+                i + 1, qm[i], d, m, m * beta * 1.6022);
     }
   }
 }
@@ -337,8 +374,7 @@ void FixMspinNH::compute_zeeman()
 
   zeeman_pe = 0.0;
 
-  for (int ibody = 0; ibody < nbody; ibody++)
-  {
+  for (int ibody = 0; ibody < nbody; ibody++) {
     // External field will always align the particles.
     // T = mu cross B
     tx = bzdz * mu[ibody][1] - bydy * mu[ibody][2];
@@ -347,14 +383,13 @@ void FixMspinNH::compute_zeeman()
 
     torque[ibody][0] += tx;
     torque[ibody][1] += ty;
-    torque[ibody][2] += tz;    
+    torque[ibody][2] += tz;
 
     // printf("Proc [%d]: dT[%d] %f, %f, %f \n", me,
     //             ibody, tx, ty, tz);
 
     // Non uniform field will also create a force.
-    if (uniform_field == 0)
-    {
+    if (uniform_field == 0) {
       // F = mu dot grad B
       fx = mu[ibody][0] * bxdx + mu[ibody][1] * bxdy + mu[ibody][2] * bxdz;
       fy = mu[ibody][0] * bydx + mu[ibody][1] * bydy + mu[ibody][2] * bydz;
@@ -368,7 +403,7 @@ void FixMspinNH::compute_zeeman()
       //             ibody, fx, fy, fz);
     }
 
-    zeeman_pe -= ( mu[ibody][0] * bxdx + mu[ibody][1] * bydy + mu[ibody][2] * bzdz );
+    zeeman_pe -= (mu[ibody][0] * bxdx + mu[ibody][1] * bydy + mu[ibody][2] * bzdz);
   }
 }
 
@@ -390,17 +425,15 @@ void FixMspinNH::compute_dipolar()
   // since no of rigid bodies, nbody is usually small
   // we calculate manybody interaction seperately in each proc
   // which scales as nC2, MPI communication can take longer time than this.
-  // @todo: there has to be a better way to do it, but it works for now. :) 
-  for (int ibody = 0; ibody < nbody - 1; ibody++)
-  {
+  // @todo: there has to be a better way to do it, but it works for now. :)
+  for (int ibody = 0; ibody < nbody - 1; ibody++) {
     double iwrap[3];
-    domain->unmap(xcm[ibody],imagebody[ibody], iwrap);
+    domain->unmap(xcm[ibody], imagebody[ibody], iwrap);
 
-    for (int jbody = ibody + 1; jbody < nbody; jbody++)
-    {
+    for (int jbody = ibody + 1; jbody < nbody; jbody++) {
       // unwrap the rigid COM
       double jwrap[3];
-      domain->unmap(xcm[jbody],imagebody[jbody], jwrap);
+      domain->unmap(xcm[jbody], imagebody[jbody], jwrap);
 
       // cm to cm distance
       delx = iwrap[0] - jwrap[0];
@@ -410,8 +443,7 @@ void FixMspinNH::compute_dipolar()
       rsq = delx * delx + dely * dely + delz * delz;
 
       // @todo: implement modified potential version if cutoff is used
-      if (rsq < dipole_cutoff * dipole_cutoff)
-      {
+      if (rsq < dipole_cutoff * dipole_cutoff) {
         r2inv = 1.0 / rsq;
         rinv = sqrt(r2inv);
         r3inv = r2inv * rinv;
@@ -419,7 +451,8 @@ void FixMspinNH::compute_dipolar()
         r7inv = r5inv * r2inv;
 
         // force dot terms
-        pdotp = mu[ibody][0] * mu[jbody][0] + mu[ibody][1] * mu[jbody][1] + mu[ibody][2] * mu[jbody][2];
+        pdotp =
+            mu[ibody][0] * mu[jbody][0] + mu[ibody][1] * mu[jbody][1] + mu[ibody][2] * mu[jbody][2];
         pidotr = mu[ibody][0] * delx + mu[ibody][1] * dely + mu[ibody][2] * delz;
         pjdotr = mu[jbody][0] * delx + mu[jbody][1] * dely + mu[jbody][2] * delz;
 
@@ -469,7 +502,7 @@ void FixMspinNH::compute_dipolar()
         //             ibody, jbody, fx, fy, fz);
 
         // calculate dipolar interaction energy
-        dipolar_pe += fq * ( r3inv * pdotp - 3.0 * r5inv * pidotr * pjdotr );
+        dipolar_pe += fq * (r3inv * pdotp - 3.0 * r5inv * pidotr * pjdotr);
       }
     }
   }
@@ -508,16 +541,17 @@ double FixMspinNH::extract_distance(int ibody, int jbody)
   double iwrap[3];
   double jwrap[3];
 
-  if(ibody > nbody or jbody > nbody) error->all(FLERR, "Invalid molecule id for distance computation");
-  if(ibody == 0 or jbody == 0) error->all(FLERR, "Invalid molecule id for distance computation");
-  
-  domain->unmap(xcm[ibody-1],imagebody[ibody-1], iwrap);
-  domain->unmap(xcm[jbody-1],imagebody[jbody-1], jwrap);
+  if (ibody > nbody or jbody > nbody)
+    error->all(FLERR, "Invalid molecule id for mspin/distance compute");
+  if (ibody == 0 or jbody == 0) error->all(FLERR, "Invalid molecule id for mspin/distance compute");
+
+  domain->unmap(xcm[ibody - 1], imagebody[ibody - 1], iwrap);
+  domain->unmap(xcm[jbody - 1], imagebody[jbody - 1], jwrap);
 
   // unwrapped cm to cm distance
   delx = iwrap[0] - jwrap[0];
   dely = iwrap[1] - jwrap[1];
   delz = iwrap[2] - jwrap[2];
 
-  return sqrt(delx*delx + dely*dely + delz*delz);
+  return sqrt(delx * delx + dely * dely + delz * delz);
 }

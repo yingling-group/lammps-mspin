@@ -1,22 +1,40 @@
 /* ----------------------------------------------------------------------
-            Contributing author: Akhlak Mahmood (NC State)
+   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+   https://www.lammps.org/, Sandia National Laboratories
+   Steve Plimpton, sjplimp@sandia.gov
+
+   Copyright (2003) Sandia Corporation.  Under the terms of Contract
+   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+   certain rights in this software.  This software is distributed under
+   the GNU General Public License.
+
+   See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <cstdio>
-#include <cstring>
+/* ----------------------------------------------------------------------
+   Contributing author: Akhlak Mahmood
+
+   Contact:
+     Department of Materials Science and Engineering,
+     North Carolina State University,
+     Raleigh, NC, USA
+
+     amahmoo3@ncsu.edu; mahmoodakhlak@gmail.com
+------------------------------------------------------------------------- */
+
+#include "compute_mspin.h"
 #include "error.h"
+#include "fix_mspin_nh.h"
 #include "memory.h"
 #include "modify.h"
 #include "update.h"
-#include "compute_mspin.h"
-#include "fix_mspin_nh.h"
+#include <cstdio>
+#include <cstring>
 
 using namespace LAMMPS_NS;
 using namespace std;
 
-// @todo: change this into rigid/mspin/energy
-ComputeMspin::ComputeMspin(LAMMPS *lmp, int narg, char **arg) :
-  Compute(lmp, narg, arg), rfix(NULL)
+ComputeMspin::ComputeMspin(LAMMPS *lmp, int narg, char **arg) : Compute(lmp, narg, arg), rfix(NULL)
 {
   if (narg != 4) error->all(FLERR, "Illegal compute mspin command.");
 
@@ -33,24 +51,23 @@ ComputeMspin::ComputeMspin(LAMMPS *lmp, int narg, char **arg) :
   rfix = new char[n];
   strcpy(rfix, arg[3]);
 
-  memory->create(vector,2,"compute/mspin:vector");
+  memory->create(vector, 2, "compute/mspin:vector");
 }
 
 ComputeMspin::~ComputeMspin()
 {
-  delete [] rfix;
-  delete [] extlist;
+  delete[] rfix;
+  delete[] extlist;
   memory->destroy(vector);
 }
 
 void ComputeMspin::init()
 {
   irfix = modify->find_fix(rfix);
-  if (irfix < 0)
-    error->all(FLERR,"Fix ID for compute mspin does not exist");
+  if (irfix < 0) error->all(FLERR, "Fix ID for compute mspin/energy does not exist");
 
-  if (strncmp(modify->fix[irfix]->style,"rigid/mspin",11))
-    error->all(FLERR,"Compute mspin with non-mspin fix-ID");
+  if (!utils::strmatch(modify->fix[irfix]->style,"^rigid/n.t/mspin"))
+    error->all(FLERR, "Compute mspin with non-mspin fix-ID");
 }
 
 void ComputeMspin::compute_vector()
@@ -59,7 +76,7 @@ void ComputeMspin::compute_vector()
 
   invoked_vector = update->ntimestep;
 
-  if (strncmp(modify->fix[irfix]->style,"rigid/mspin",11) == 0) {
+  if (utils::strmatch(modify->fix[irfix]->style,"^rigid/n.t/mspin")) {
     zeeman = ((FixMspinNH *) modify->fix[irfix])->extract_zeeman_pe();
     dipolar = ((FixMspinNH *) modify->fix[irfix])->extract_dipolar_pe();
   }

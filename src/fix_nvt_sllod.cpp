@@ -54,6 +54,7 @@ FixNVTSllod::FixNVTSllod(LAMMPS *lmp, int narg, char **arg) :
   modify->add_compute(fmt::format("{} {} temp/deform",
                                   id_temp,group->names[igroup]));
   tcomputeflag = 1;
+  nondeformbias = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -73,7 +74,7 @@ void FixNVTSllod::init()
   int i;
   for (i = 0; i < modify->nfix; i++)
     if (strncmp(modify->fix[i]->style,"deform",6) == 0) {
-      if (((FixDeform *) modify->fix[i])->remapflag != Domain::V_REMAP)
+      if ((dynamic_cast<FixDeform *>( modify->fix[i]))->remapflag != Domain::V_REMAP)
         error->all(FLERR,"Using fix nvt/sllod with inconsistent fix deform "
                    "remap option");
       break;
