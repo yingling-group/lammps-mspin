@@ -1,4 +1,4 @@
-# MSPIN Package
+# The MSPIN Package
 This package contains a `fix rigid/nvt/mspin` command that updates nanoparticle
 dynamics subjected to external magnetic field and mangetic dipolar interactions.
 
@@ -39,3 +39,12 @@ set(LAMMPS_MACHINE serial CACHE STRING "" FORCE)
 # set(BUILD_MPI ON CACHE BOOL "" FORCE)
 # set(LAMMPS_MACHINE mpi CACHE STRING "" FORCE)
 ```
+
+# Update of the official code
+Other than adding files in the `src/MSPIN` and `examples/mspin` directory, the following
+changes are made to the LAMMPS official files.
+
+- `src/RIGID/fix_rigid.cpp` is updated to allow additional arguments.
+- `src/Makefile` is updated to add the name of the package to the PACKAGE list.
+- `cmake/CMakeList.txt` is updated to add the name of the pacakge to the STANDARD_PACKAGES list.
+
